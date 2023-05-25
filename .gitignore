@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 
 *.wav
+*.iml
+modules.xml
+.idea/misc.xml
+*.ipr
