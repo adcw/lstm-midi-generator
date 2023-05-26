@@ -164,3 +164,5 @@ cython_debug/
 modules.xml
 .idea/misc.xml
 *.ipr
+/training_checkpoints/
+.idea/lstm-midi-generator.iml
