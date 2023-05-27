@@ -1,12 +1,14 @@
 import src.midi_func as mf
 from src.utils import get_midi_filenames
 from src.dataset import create_dataset, get_tensor_dataset
+from src.model import MusicModel
 import pretty_midi
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-if __name__ == '__main__':
+
+def test():
     filenames = get_midi_filenames('samples', ['Basic Beats'])
 
     sample_file = filenames[0]
@@ -41,7 +43,18 @@ if __name__ == '__main__':
     # write notes back to MIDI file
     mf.notes_to_midi(raw_notes, instrument_name, 'out test.mid')
 
+
+if __name__ == '__main__':
+    vocab_size = 128
+
+    filenames = get_midi_filenames('samples', ['Basic Beats'])
     all_notes = create_dataset(filepaths=filenames)
-    train_ds = get_tensor_dataset(all_notes)
+    train_ds = get_tensor_dataset(all_notes, vocab_size=vocab_size)
+
+    music_model = MusicModel()
+    music_model.fit(train_ds)
+    generated_notes = music_model.generate_notes(all_notes[:25])
+
+    mf.plot_piano_roll(generated_notes)
 
     pass

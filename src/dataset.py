@@ -8,12 +8,12 @@ def create_dataset(filepaths: list[str]):
     return pd.concat([midi_to_notes(f) for f in filepaths])
 
 
-def get_tensor_dataset(dataset: pd.DataFrame, keys: list[str] | None = None, seq_length: int = 25, vocab_size=128):
-    if keys is None:
-        keys = ['pitch', 'step', 'duration']
+def get_tensor_dataset(dataset: pd.DataFrame, key_order: list[str] | None = None, seq_length: int = 25, vocab_size=128):
+    if key_order is None:
+        key_order = ['pitch', 'step', 'duration']
 
-    notes_ds = _get_dataset(dataset, keys)
-    seq_ds = _create_sequences(notes_ds, seq_length, key_order=keys, vocab_size=vocab_size)
+    notes_ds = _get_dataset(dataset, key_order)
+    seq_ds = _create_sequences(notes_ds, seq_length, key_order=key_order, vocab_size=vocab_size)
 
     return seq_ds
 
