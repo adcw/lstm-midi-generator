@@ -1,5 +1,6 @@
 import src.midi_func as mf
 from src.utils import get_midi_filenames
+from src.dataset import create_dataset, get_tensor_dataset
 import pretty_midi
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -34,25 +35,13 @@ if __name__ == '__main__':
     print(raw_notes.head(20))
 
     # plot sample file's MIDI piano roll
-    mf.plot_piano_roll(raw_notes)
-    plt.show()
+    # mf.plot_piano_roll(raw_notes)
+    # plt.show()
 
     # write notes back to MIDI file
     mf.notes_to_midi(raw_notes, instrument_name, 'out test.mid')
 
-    all_notes = []
-    for f in filenames:
-        notes = mf.midi_to_notes(f)
-        all_notes.append(notes)
-
-    all_notes = pd.concat(all_notes)
-
-    n_notes = len(all_notes)
-    print('Number of notes parsed:', n_notes)
-
-    cols = ['start', 'pitch', 'end', 'step']
-    # dataset = all_notes['']
-
-    dataset = all_notes[cols]
+    all_notes = create_dataset(filepaths=filenames)
+    train_ds = get_tensor_dataset(all_notes)
 
     pass
