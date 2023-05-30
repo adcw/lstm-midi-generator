@@ -1,12 +1,10 @@
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from keras.layers import Input, LSTM, Dense, Dropout
 from keras.losses import SparseCategoricalCrossentropy
 from keras.models import Model
 from keras.optimizers import Adam
 from tqdm import tqdm
-
 
 def mse_with_positive_pressure(y_true: tf.Tensor, y_pred: tf.Tensor):
     mse = (y_true - y_pred) ** 2
