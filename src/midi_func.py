@@ -13,19 +13,23 @@ def midi_to_notes(midi_file: str) -> pd.DataFrame:
 
     # Sort the notes by start time
     sorted_notes = sorted(instrument.notes, key=lambda note: note.start)
-    prev_start = sorted_notes[0].start
+
+    # Get resolution of MIDI file
+    resolution = pm.resolution
 
     for note in sorted_notes:
+        # convert start and end time from seconds to beats.
+        start = pm.time_to_tick(note.start) / resolution
+        end = pm.time_to_tick(note.end) / resolution
+
         note: pretty_midi.Note = note
-        start = note.start
-        end = note.end
+
         notes['pitch'].append(note.pitch)
         notes['start'].append(start)
-        # notes['end'].append(end)
-        notes['step'].append(start - prev_start)
-        notes['duration'].append(end - start)
+        notes['start offset'].append(start % 1)
+        notes['end'].append(end)
+        notes['end offset'].append(start % 1)
         notes['velocity'].append(note.velocity)
-        prev_start = start
 
     df = pd.DataFrame({name: np.array(value) for name, value in notes.items()})
     df.name = midi_file
@@ -53,22 +57,16 @@ def plot_piano_roll(notes: pd.DataFrame, count: int | None = None):
         _ = plt.title(title)
 
 
-def notes_to_midi(notes: pd.DataFrame, instrument_name: str, out_file: str | None = None,
-                  velocity: int = 100) -> pretty_midi.PrettyMIDI:
+def notes_to_midi(notes: pd.DataFrame, instrument_name: str, out_file: str | None = None) -> pretty_midi.PrettyMIDI:
     pm = pretty_midi.PrettyMIDI()
     instrument = pretty_midi.Instrument(
         program=pretty_midi.instrument_name_to_program(
             instrument_name))
 
-    prev_start = 0
-    for i, note in notes.iterrows():
-        start = float(prev_start + note['step'])
-        end = float(start + note['duration'])
-
-        note = pretty_midi.Note(velocity=velocity, pitch=int(note['pitch']),
-                                start=start, end=end)
+    for _, note in notes.iterrows():
+        note = pretty_midi.Note(velocity=note['velocity'], pitch=int(note['pitch']),
+                                start=note['start'], end=note['end'])
         instrument.notes.append(note)
-        prev_start = start
 
     pm.instruments.append(instrument)
 
