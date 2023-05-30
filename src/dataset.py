@@ -1,67 +1,60 @@
 from src.midi_func import midi_to_notes
-import pandas as pd
-from numpy import stack
-import tensorflow as tf
+from pandas import DataFrame
 
 
-def create_dataset(filepaths: list[str]):
-    return pd.concat([midi_to_notes(f) for f in filepaths])
+def read_datasets(filepaths: list[str]):
+    return [midi_to_notes(f) for f in filepaths]
 
 
-def get_tensor_dataset(dataset: pd.DataFrame, key_order: list[str] | None = None, seq_len: int = 25, vocab_size=128):
-    if key_order is None:
-        key_order = ['pitch', 'step', 'duration']
+def process_dataset(df: DataFrame) -> DataFrame:
+    """
 
-    notes_ds = _get_dataset(dataset, key_order)
-    seq_ds = _create_sequences(notes_ds, seq_len, key_order=key_order, vocab_size=vocab_size)
+    Input data format
+            pitch      start         start offset   end         end offset  velocity
+    0       36         0.000000      0.000000       0.527083    0.000000         127
+    1       42         0.012500      0.012500       0.252083    0.012500         127
+    2       42         0.679167      0.679167       0.918750    0.679167          91
+    3       36         0.750000      0.750000       1.277083    0.750000         127
+    4       38         1.000000      0.000000       1.527083    0.000000         127
+    ..     ...         ...           ...            ...         ...              ...
+    103     36         30.250000     0.250000       30.277083   0.250000         127
+    104     42         30.679167     0.679167       30.918750   0.679167          91
+    105     38         31.000000     0.000000       31.527083   0.000000         127
+    106     42         31.012500     0.012500       31.252083   0.012500         127
+    107     42         31.679167     0.679167       31.918750   0.679167          91
 
-    return seq_ds
+    Output data format:
 
+    t    offset 36       38    42
+    0.0  0.1    [2, 127] [0, 0] [0, 0]
+    0.2  0.2    [1, 127] [0, 0] [0, 0]
+    0.4  0.3    [1, 127] [0, 0] [0, 0]
+    0.6  0.4    [0, 0]   [0, 0] [0, 0]
+    0.7  0.5    [0, 0]   [0, 0] [0, 0]
+    ...
+    1.5  1.3    [0, 0]   [0, 0] [0, 0]
 
-def _get_dataset(dataset: pd.DataFrame, keys: list[str] | None = None):
-    train_notes = stack([dataset[key] for key in keys], axis=1)
+    t - time in beats
+    offset - beat offset (how much the event is shifted from the beat time)
 
-    notes_ds = tf.data.Dataset.from_tensor_slices(train_notes)
+    # TODO
+    STATE:
+        2 - Pressing note
+        1 - Holding note
+        0 - Note is released
+    CREATE EMPTY DATAFRAME (only with row and col labels - row label is time of pressing or releasing, col label is the pitch).
+    1. Iterate over rows of input data
+        a. If output dataframe doesn't have this pitch column already, insert empty column with the note name.
+        b. If output dataframe doesn't have this start time or end time already, add empty row with the time value.
 
-    return notes_ds
+    FILL THE DATAFRAME WITH EVENT VALUES
+    (TO DISCUSS)
+    1. Group/split the input dataframe by note pitch
+    2. Iterate over each column (pitch) in output dataframe as col
+        a. Iterate over each cell in col as
 
+    :param df: the dataframe used to generate training data
+    :return: generated training data
+    """
 
-def _create_sequences(dataset: tf.data.Dataset, seq_len: int, key_order: list[str],
-                      vocab_size=128) -> tf.data.Dataset:
-    """Returns TF Dataset of sequence and label examples."""
-    seq_len = seq_len + 1
-
-    n_notes = len(dataset)
-
-    # Take 1 extra for the labels
-    windows = dataset.window(seq_len, shift=1, stride=1,
-                             drop_remainder=True)
-
-    # `flat_map` flattens the" dataset of datasets" into a dataset of tensors
-    flatten = lambda x: x.batch(seq_len, drop_remainder=True)
-    sequences = windows.flat_map(flatten)
-
-    # Normalize note pitch
-    def scale_pitch(x):
-        x = x / [vocab_size, 1.0, 1.0]
-        return x
-
-    # Split the labels
-    def split_labels(seq):
-        inputs = seq[:-1]
-        labels_dense = seq[-1]
-        labels = {key: labels_dense[i] for i, key in enumerate(key_order)}
-
-        return scale_pitch(inputs), labels
-
-    seq_ds = sequences.map(split_labels, num_parallel_calls=tf.data.AUTOTUNE)
-
-    batch_size = 64
-    buffer_size = n_notes - seq_len  # the number of items in the dataset
-    train_ds = (seq_ds
-                .shuffle(buffer_size)
-                .batch(batch_size, drop_remainder=True)
-                .cache()
-                .prefetch(tf.data.experimental.AUTOTUNE))
-
-    return train_ds
+    # for note in
