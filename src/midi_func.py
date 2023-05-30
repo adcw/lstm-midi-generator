@@ -16,13 +16,15 @@ def midi_to_notes(midi_file: str) -> pd.DataFrame:
     prev_start = sorted_notes[0].start
 
     for note in sorted_notes:
+        note: pretty_midi.Note = note
         start = note.start
         end = note.end
         notes['pitch'].append(note.pitch)
         notes['start'].append(start)
-        notes['end'].append(end)
+        # notes['end'].append(end)
         notes['step'].append(start - prev_start)
         notes['duration'].append(end - start)
+        notes['velocity'].append(note.velocity)
         prev_start = start
 
     df = pd.DataFrame({name: np.array(value) for name, value in notes.items()})
@@ -33,9 +35,12 @@ def midi_to_notes(midi_file: str) -> pd.DataFrame:
 # Visualizing the paramaters of the muscial notes of the piano
 def plot_piano_roll(notes: pd.DataFrame, count: int | None = None):
     if count:
-        title = f'{notes.name}: First {count} notes'
+        # title = f'{notes.name}: First {count} notes'
+        title = f'First {count} notes'
     else:
-        title = f'{notes.name}: Whole track'
+        # title = f'{notes.name}: Whole track'
+        title = f'Whole track'
+
         count = len(notes['pitch'])
 
         plt.figure(figsize=(20, 4))
