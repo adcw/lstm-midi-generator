@@ -1,12 +1,11 @@
-from typing import Tuple
-
+import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.layers import Input, LSTM, Dense
-from tensorflow.keras.models import Model
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
-import numpy as np
+from keras.layers import Input, LSTM, Dense, Dropout
+from keras.losses import SparseCategoricalCrossentropy
+from keras.models import Model
+from keras.optimizers import Adam
+from tqdm import tqdm
 
 
 def mse_with_positive_pressure(y_true: tf.Tensor, y_pred: tf.Tensor):
@@ -16,33 +15,11 @@ def mse_with_positive_pressure(y_true: tf.Tensor, y_pred: tf.Tensor):
 
 
 class MusicModel:
-    def __init__(self, seq_length: int = 25, vocab_size: int = 128):
+    def __init__(self, seq_len: int = 25, vocab_size: int = 128,
+                 model_path: str = "saved_model/model"):
 
         self.vocab_size = vocab_size
-        self.seq_length = seq_length
-
-        input_shape = (seq_length, 3)
-        learning_rate = 0.005
-
-        inputs = Input(input_shape)
-        x = LSTM(128)(inputs)
-
-        outputs = {'pitch': Dense(128, name='pitch')(x),
-                   'step': Dense(1, name='step')(x),
-                   'duration': Dense(1, name='duration')(x),
-                   }
-
-        self.model = Model(inputs, outputs)
-
-        loss = {'pitch': SparseCategoricalCrossentropy(from_logits=True),
-                'step': mse_with_positive_pressure,
-                'duration': mse_with_positive_pressure,
-                }
-
-        optimizer = Adam(learning_rate=learning_rate)
-
-        self.model.compile(loss=loss, optimizer=optimizer)
-        self.model.summary()
+        self.seq_length = seq_len
 
         self.callbacks = [
             tf.keras.callbacks.ModelCheckpoint(filepath='./training_checkpoints/ckpt_{epoch}', save_weights_only=True),
@@ -50,9 +27,39 @@ class MusicModel:
                                              verbose=1, restore_best_weights=True),
         ]
 
+        input_shape = (seq_len, 3)
+        learning_rate = 0.005
+
+        inputs = Input(input_shape)
+        x = LSTM(256, return_sequences=True)(inputs)
+        x = Dropout(0.2)(x)
+        x = LSTM(128)(x)
+        x = Dropout(0.2)(x)
+
+        outputs = {
+            'pitch': Dense(128, name='pitch')(x),
+            'step': Dense(1, name='step')(x),
+            'duration': Dense(1, name='duration')(x),
+        }
+
+        self.model = Model(inputs, outputs)
+
+        loss = {
+            'pitch': SparseCategoricalCrossentropy(from_logits=True),
+            'step': mse_with_positive_pressure,
+            'duration': mse_with_positive_pressure,
+        }
+
+        optimizer = Adam(learning_rate=learning_rate)
+
+        self.model.compile(loss=loss, optimizer=optimizer)
+        self.model.summary()
+
         self.model.compile(loss=loss,
                            loss_weights={'pitch': 0.05, 'step': 1.0, 'duration': 1.0, },
                            optimizer=optimizer)
+
+        self.model.save(model_path)
 
     def fit(self, train_ds: tf.data.Dataset, epochs: int = 50):
         self.model.fit(train_ds,
@@ -68,7 +75,7 @@ class MusicModel:
         # Add batch dimension
         inputs = tf.expand_dims(notes, 0)
 
-        predictions = self.model.predict(inputs)
+        predictions = self.model.predict(inputs, verbose=0)
         pitch_logits = predictions['pitch']
         step = predictions['step']
         duration = predictions['duration']
@@ -102,7 +109,7 @@ class MusicModel:
         generated_notes = []
         prev_start = 0
 
-        for _ in range(num_predictions):
+        for _ in tqdm(range(num_predictions)):
             pitch, step, duration = self.predict_next_note(input_notes, temperature)
             start = prev_start + step
             end = start + duration
