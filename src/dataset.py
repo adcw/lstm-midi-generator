@@ -1,9 +1,21 @@
+import numpy as np
+
 from src.midi_func import midi_to_notes
 from pandas import DataFrame
 
 
 def read_datasets(filepaths: list[str]):
     return [midi_to_notes(f) for f in filepaths]
+
+
+def window(df: DataFrame, size: int = 10, stride: int = 1) -> np.array:
+    df_len = df.shape[0]
+    result = list()
+
+    for i in range(0, df_len - size, stride):
+        result.append(df.iloc[i:i + size])
+
+    return np.array(result)
 
 
 def process_dataset(df: DataFrame) -> DataFrame:
@@ -22,6 +34,15 @@ def process_dataset(df: DataFrame) -> DataFrame:
     105     38         31.000000     0.000000       31.527083   0.000000         127
     106     42         31.012500     0.012500       31.252083   0.012500         127
     107     42         31.679167     0.679167       31.918750   0.679167          91
+
+
+        time    offset  36  42  38
+    0.000000    ...     [2, 127]
+    0.012500            [1, 127]
+    0.527083            [0, 0]
+    0.679167
+
+    ...
 
     Output data format:
 
