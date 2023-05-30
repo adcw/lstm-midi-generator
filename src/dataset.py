@@ -2,11 +2,16 @@ from src.midi_func import midi_to_notes
 import pandas as pd
 import numpy as np
 
+NOTE_DOWN = 2
+NOTE_HOLD = 1
+NOTE_OFF = 0
+
+
 def read_datasets(filepaths: list[str]):
     return [midi_to_notes(f) for f in filepaths]
 
 
-def window(df: DataFrame, size: int = 10, stride: int = 1) -> np.array:
+def window(df: pd.DataFrame, size: int = 10, stride: int = 1) -> np.array:
     df_len = df.shape[0]
     result = list()
 
@@ -62,40 +67,49 @@ def process_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """
     col = ['time', 'offset']
     col.extend(df['pitch'].unique())
-    uniq_pitch = df['pitch'].unique()
+
     output = pd.DataFrame(columns=col)
     output['time'] = pd.concat([df['start'], df['end']], axis=0)
     output['offset'] = pd.concat([df['start offset'], df['end offset']], axis=0)
+
     output = output.sort_values(by=['time'])
     output = output.reset_index(drop=True)
+
     output.iloc[2:] = output.iloc[2:].astype(object)
 
-    # output = output.reindex(output['time'])
-    a = df['start']
-    for i,row in df.iterrows():
+    for i, row in df.iterrows():
         pitch = row['pitch']
         velocity = row['velocity']
         start = row['start']
         end = row['end']
-        index = np.flatnonzero(output['time'] == start)
-        output.at[index[0], pitch] = [2,velocity]
-        index = np.flatnonzero(output['time'] == end)
-        output.at[index[0], pitch] = [0, 0]
 
-    for i in range(0,output.shape[0]-1):
-        # row:
-        row = output.iloc[i,:]
-        next_row = output.iloc[i+1,:]
+        index = np.flatnonzero(output['time'] == start)
+        output.at[index[0], pitch] = [NOTE_DOWN, velocity]
+
+        index = np.flatnonzero(output['time'] == end)
+        output.at[index[0], pitch] = [NOTE_OFF, 0]
+
+    output.iloc[0, 2:] = output.iloc[0, 2:].apply(lambda x: [0, 0] if type(x) is not list else x)
+
+    for i in range(1, output.shape[0]):
+        prev_row = output.iloc[i - 1, 2:]
+        curr_row = output.iloc[i, 2:]
+
+        for j, entry in enumerate(zip(prev_row, curr_row)):
+            prev_arr, curr_arr = entry
+            note_name = prev_row.index[j]
+
+            if type(curr_arr) != list:
+                prev_note_state, prev_note_velocity = prev_arr
+                if prev_note_state == NOTE_DOWN:
+                    output.at[i, note_name] = [NOTE_HOLD, prev_note_velocity]
+                    pass
+                elif prev_note_state == NOTE_HOLD:
+                    output.at[i, note_name] = [NOTE_HOLD, prev_note_velocity]
+                    pass
+                elif prev_note_state == NOTE_OFF:
+                    output.at[i, note_name] = [NOTE_OFF, 0]
+                    pass
+        pass
 
     pass
-
-    # for i,row in df.iterrows():
-    #     pitch = row['pitch']
-    #     velocity = row['velocity']
-    #     start = row['start']
-    #     end = row['end']
-    #     loc = output.loc[output['time'] == start]
-    #     loc[pitch] = [2,velocity]
-    #     loc = output.loc[output['time'] == end]
-    #     loc[pitch] = [0, 0]
-    #     pass
