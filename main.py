@@ -1,4 +1,4 @@
-from src.dataset import read_datasets
+from src.dataset import read_datasets, process_dataset
 from src.utils import get_midi_filenames
 from src.midi_func import notes_to_midi
 
@@ -10,6 +10,6 @@ if __name__ == '__main__':
     filenames = get_midi_filenames(main_dir='samples', subdirs=['Swing Beats'])
 
     all_notes = read_datasets(filepaths=filenames[:1])[0]
-
+    a = process_dataset(all_notes)
     # notes_to_midi(all_notes, "Acoustic Grand Piano", "./output/test.mid")
     pass
