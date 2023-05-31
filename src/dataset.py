@@ -110,6 +110,38 @@ def process_dataset(df: pd.DataFrame) -> pd.DataFrame:
                 elif prev_note_state == NOTE_OFF:
                     output.at[i, note_name] = [NOTE_OFF, 0]
                     pass
-        pass
+    return output
 
-    pass
+
+def r_process_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+
+    for column in df.columns[2:]:
+        pitch = int(column)
+        start_time = None
+        end_time = None
+        velocity = None
+
+        for i, row in df.iterrows():
+            value = row[column]
+            if isinstance(value, list):
+                if value[0] == NOTE_DOWN:
+                    start_time = row['time']
+                    velocity = value[1]
+                elif value[0] == NOTE_OFF:
+                    end_time = row['time']
+                    start_offset = 0
+                    end_offset = 0
+                    rows.append({'pitch': pitch, 'start': start_time, 'start offset': start_offset,
+                                 'end': end_time, 'end offset': end_offset, 'velocity': velocity})
+                    start_time = None
+                    end_time = None
+                    velocity = None
+
+    output = pd.DataFrame(rows, columns=['pitch', 'start', 'start offset', 'end', 'end offset', 'velocity'])
+    output = output.dropna()
+    output['start offset'] = output['start'] % 1
+    output['end offset'] = output['end'] % 1
+    output = output.sort_values(by=['start'])
+    output = output.reset_index(drop=True)
+    return output
