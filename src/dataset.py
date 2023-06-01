@@ -21,50 +21,7 @@ def window(df: pd.DataFrame, size: int = 10, stride: int = 1) -> np.array:
     return np.array(result)
 
 
-def process_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    notes['pitch'].append(note.pitch)
-    notes['start'].append(start)
-    notes['start offset'].append(start % 1)
-    notes['end'].append(end)
-    notes['end offset'].append(start % 1)
-    notes['velocity'].append(note.velocity)
-    Input data format
-            pitch      start         start offset   end         end offset       velocity
-    0       36         0.000000      0.000000       0.527083    0.000000         127
-    1       42         0.012500      0.012500       0.252083    0.012500         127
-    2       42         0.679167      0.679167       0.918750    0.679167          91
-    3       36         0.750000      0.750000       1.277083    0.750000         127
-    4       38         1.000000      0.000000       1.527083    0.000000         127
-
-    Output data format:
-    t    offset 36       38    42
-    0.0  0.1    [2, 127] [0, 0] [0, 0]
-    0.3  0.2    [1, 127] [0, 0] [0, 0]
-    0.4  0.3    [1, 127] [0, 0] [0, 0]
-
-    t - time in beats
-    offset - beat offset (how much the event is shifted from the beat time)
-
-    # TODO
-    STATE:
-        2 - Pressing note
-        1 - Holding note
-        0 - Note is released
-    CREATE EMPTY DATAFRAME (only with row and col labels - row label is time of pressing or releasing, col label is the pitch).
-    1. Iterate over rows of input data
-        a. If output dataframe doesn't have this pitch column already, insert empty column with the note name.
-        b. If output dataframe doesn't have this start time or end time already, add empty row with the time value.
-
-    FILL THE DATAFRAME WITH EVENT VALUES
-    (TO DISCUSS)
-    1. Group/split the input dataframe by note pitch
-    2. Iterate over each column (pitch) in output dataframe as col
-        a. Iterate over each cell in col as
-
-    :param df: the dataframe used to generate training data
-    :return: generated training data
-    """
+def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
     col = ['time', 'offset']
     col.extend(df['pitch'].unique())
 
@@ -111,12 +68,11 @@ def process_dataset(df: pd.DataFrame) -> pd.DataFrame:
                     output.at[i, note_name] = [NOTE_OFF, 0]
                     pass
 
-    # output = output.loc[df.astype(str).drop_duplicates().index].loc[0,'time']
     output = output.drop_duplicates(subset=['time'])
     return output
 
 
-def r_process_dataset(df: pd.DataFrame) -> pd.DataFrame:
+def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
 
     for column in df.columns[2:]:
@@ -163,23 +119,3 @@ def r_process_dataset(df: pd.DataFrame) -> pd.DataFrame:
     output = output.sort_values(by=['start'])
     output = output.reset_index(drop=True)
     return output
-
-
-"""
-        for i, row in df.iterrows():
-            value = row[column]
-            if isinstance(value, list):
-                if value[0] == NOTE_DOWN:
-                    start_time = row['time']
-                    velocity = value[1]
-                elif value[0] == NOTE_OFF:
-                    end_time = row['time']
-                    start_offset = 0
-                    end_offset = 0
-                    rows.append({'pitch': pitch, 'start': start_time, 'start offset': start_offset,
-                                 'end': end_time, 'end offset': end_offset, 'velocity': velocity})
-                    start_time = None
-                    end_time = None
-                    velocity = None
-
-"""
