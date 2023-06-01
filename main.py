@@ -15,4 +15,7 @@ if __name__ == '__main__':
     a = process_dataset(all_notes)
     b = r_process_dataset(a)
     notes_to_midi(b, "Acoustic Grand Piano", "./output/test.mid", tempo=TEMPO, resolution=RESOLUTION)
+    # notes_to_midi(all_notes, "Acoustic Grand Piano", "./output/test.mid")
+    d = b.astype('str',True)
+    diffs = d.compare(all_notes.astype('str'))
     pass

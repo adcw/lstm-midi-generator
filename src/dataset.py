@@ -110,6 +110,9 @@ def process_dataset(df: pd.DataFrame) -> pd.DataFrame:
                 elif prev_note_state == NOTE_OFF:
                     output.at[i, note_name] = [NOTE_OFF, 0]
                     pass
+
+    # output = output.loc[df.astype(str).drop_duplicates().index].loc[0,'time']
+    output = output.drop_duplicates(subset=['time'])
     return output
 
 
@@ -121,7 +124,48 @@ def r_process_dataset(df: pd.DataFrame) -> pd.DataFrame:
         start_time = None
         end_time = None
         velocity = None
+        for i, row in df.iterrows():
+            value = row[column]
+            if isinstance(value, list):
+                if value[0] == NOTE_DOWN:
+                    if start_time is not None:
+                        # Jeśli już istnieje aktywny dźwięk, dodaj go do rows
+                        end_time = row['time']
+                        start_offset = 0
+                        end_offset = 0
+                        rows.append({'pitch': pitch, 'start': start_time, 'start offset': start_offset,
+                                     'end': end_time, 'end offset': end_offset, 'velocity': velocity})
+                    start_time = row['time']
+                    velocity = value[1]
+                elif value[0] == NOTE_OFF:
+                    end_time = row['time']
+                    start_offset = 0
+                    end_offset = 0
+                    rows.append({'pitch': pitch, 'start': start_time, 'start offset': start_offset,
+                                 'end': end_time, 'end offset': end_offset, 'velocity': velocity})
+                    start_time = None
+                    end_time = None
+                    velocity = None
 
+        # Dodaj ostatni dźwięk, jeśli jest aktywny
+        if start_time is not None and end_time is None:
+            end_time = df.iloc[-1]['time']
+            start_offset = 0
+            end_offset = 0
+            rows.append({'pitch': pitch, 'start': start_time, 'start offset': start_offset,
+                         'end': end_time, 'end offset': end_offset, 'velocity': velocity})
+
+    output = pd.DataFrame(rows, columns=['pitch', 'start', 'start offset', 'end', 'end offset', 'velocity'])
+    output = output.sort_values(by=['start'])
+    output = output.dropna()
+    output['start offset'] = output['start'] % 1
+    output['end offset'] = output['end'] % 1
+    output = output.sort_values(by=['start'])
+    output = output.reset_index(drop=True)
+    return output
+
+
+"""
         for i, row in df.iterrows():
             value = row[column]
             if isinstance(value, list):
@@ -138,10 +182,4 @@ def r_process_dataset(df: pd.DataFrame) -> pd.DataFrame:
                     end_time = None
                     velocity = None
 
-    output = pd.DataFrame(rows, columns=['pitch', 'start', 'start offset', 'end', 'end offset', 'velocity'])
-    output = output.dropna()
-    output['start offset'] = output['start'] % 1
-    output['end offset'] = output['end'] % 1
-    output = output.sort_values(by=['start'])
-    output = output.reset_index(drop=True)
-    return output
+"""
