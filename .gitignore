@@ -166,3 +166,5 @@ modules.xml
 *.ipr
 /training_checkpoints/
 .idea/lstm-midi-generator.iml
+output/
+saved_model/
