@@ -57,14 +57,15 @@ def plot_piano_roll(notes: pd.DataFrame, count: int | None = None):
         _ = plt.title(title)
 
 
-def notes_to_midi(notes: pd.DataFrame, instrument_name: str, out_file: str | None = None) -> pretty_midi.PrettyMIDI:
-    pm = pretty_midi.PrettyMIDI()
+def notes_to_midi(notes: pd.DataFrame, instrument_name: str, out_file: str | None = None,
+                  tempo: int | None = None, resolution: int | None = None) -> pretty_midi.PrettyMIDI:
+    pm = pretty_midi.PrettyMIDI(initial_tempo=tempo, resolution=resolution)
     instrument = pretty_midi.Instrument(
         program=pretty_midi.instrument_name_to_program(
             instrument_name))
 
     for _, note in notes.iterrows():
-        note = pretty_midi.Note(velocity=note['velocity'], pitch=int(note['pitch']),
+        note = pretty_midi.Note(velocity=int(note['velocity']), pitch=int(note['pitch']),
                                 start=note['start'], end=note['end'])
         instrument.notes.append(note)
 
