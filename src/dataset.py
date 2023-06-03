@@ -12,17 +12,18 @@ def read_datasets(filepaths: list[str]):
 
 
 def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
-    col = ['time', 'offset']
+    cols = ['time', 'offset']
     pitches = df['pitch'].unique()
     veloc_names = [f"{p} vel" for p in pitches]
-    col.extend(pitches)
-    col.extend(veloc_names)
+    cols.extend(pitches)
+    cols.extend(veloc_names)
 
-    output = pd.DataFrame(columns=col)
+    output = pd.DataFrame(columns=cols)
     output['time'] = pd.concat([df['start'], df['end']], axis=0)
     output['offset'] = pd.concat([df['start offset'], df['end offset']], axis=0)
 
     output = output.sort_values(by=['time'])
+    output = output.drop_duplicates(subset=['time'])
     output = output.reset_index(drop=True)
 
     output.iloc[2:] = output.iloc[2:].astype(object)
@@ -70,13 +71,13 @@ def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
                     output.at[i, f"{note_name} vel"] = 0
                     pass
 
-    # output = output.drop_duplicates(subset=['time'])
     return output
+    # output = output.drop_duplicates(subset=['time'])
+    # return output
 
 
 def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
-
     end = int((df.shape[1] - 2) / 2 + 2)
 
     for column in df.columns[2:end]:
@@ -86,7 +87,6 @@ def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:
         velocity = None
         for i, row in df.iterrows():
             note_state = row[column]
-
             if not np.isnan(note_state):
                 if note_state == NOTE_DOWN:
                     if start_time is not None:
