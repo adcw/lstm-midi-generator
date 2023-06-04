@@ -1,13 +1,11 @@
-from keras.layers import Input, LSTM, Dense, Dropout
-from keras.models import Model
-from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 from src.data_sequences import training_sequence
 from src.dataset import read_datasets, notes_to_dataset, dataset_to_notes
 from src.midi_func import notes_to_midi
+from src.model import get_model
 from src.utils import get_midi_filenames
+from src.generate import generate
 
 VOCAB_SIZE = 128
 SEQ_LEN = 40
@@ -17,43 +15,25 @@ TEMPO = 172
 if __name__ == '__main__':
     filenames = get_midi_filenames(main_dir='samples', subdirs=['Basic Beats'])
 
-    filename = filenames[1]
+    all_notes = read_datasets(filepaths=filenames)
+    dataset = notes_to_dataset(all_notes[8])
 
-    all_notes = read_datasets(filepaths=[filename])[0]
-    dataset = notes_to_dataset(all_notes)
+    # notes = dataset_to_notes(dataset)
+    # notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
+    #               out_file="./output/test.mid")
 
-    notes = dataset_to_notes(dataset)
-    notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
-                  out_file="./output/test.mid")
+    input_len = 50
+    xs, ys, scaler = training_sequence(dataset, input_len=input_len, output_len=1)
 
-    xs, ys = training_sequence(dataset)
+    [n_rows_input, n_cols_input] = xs[0].shape
+    [n_rows_output, n_cols_output] = ys[0].shape
 
-    random_state = 123
     x_train, x_test, y_train, y_test = train_test_split(xs, ys, test_size=0.4)
     x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.5)
 
-    input_shape = x_train[0].shape
+    model = get_model(xs=x_train, ys=y_train, load=False)
 
-    inputs = Input(shape=input_shape)
-    lstm_out1 = LSTM(512, dropout=0.2, return_sequences=True)(inputs)
-    lstm_out2 = LSTM(128, dropout=0.2)(lstm_out1)
-    outputs = Dense(1)(lstm_out2)
-
-    model = Model(name="music_lstm", inputs=inputs, outputs=outputs)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
-    model.summary()
-
-    history = model.fit(x=x_train, y=y_train, epochs=100)
-
-    loss = history.history["loss"]
-    epochs = range(len(loss))
-    plt.figure()
-    plt.plot(epochs, loss, "b", label="Training loss")
-    plt.title("Training Loss")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.show()
-
-
+    # generate note
+    generate(model=model, scaler=scaler, sample_notes=all_notes[8], input_len=n_rows_input, output_len=n_rows_output)
 
     pass
