@@ -22,16 +22,16 @@ if __name__ == '__main__':
     # notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
     #               out_file="./output/test.mid")
 
-    input_len = 50
+    input_len = 70
     xs, ys, scaler = training_sequence(dataset, input_len=input_len, output_len=1)
 
     [n_rows_input, n_cols_input] = xs[0].shape
     [n_rows_output, n_cols_output] = ys[0].shape
 
-    x_train, x_test, y_train, y_test = train_test_split(xs, ys, test_size=0.4)
+    x_train, x_test, y_train, y_test = train_test_split(xs, ys, test_size=0.2)
     x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.5)
 
-    model = get_model(xs=x_train, ys=y_train, load=False)
+    model = get_model(xs=x_train, ys=y_train, validation_data=(x_val, y_val), load=False)
 
     # generate note
     generate(model=model, scaler=scaler, sample_notes=all_notes[8], input_len=n_rows_input, output_len=n_rows_output)
