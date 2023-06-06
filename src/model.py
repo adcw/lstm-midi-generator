@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.callbacks import EarlyStopping
-from keras.layers import Input, LSTM, Dense, Activation
+from keras.layers import Input, LSTM, Dense, Activation, Conv1D
 from keras.models import Model, load_model
 from keras.optimizers import Adam
 import tensorflow as tf
@@ -18,14 +18,13 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
         cnt = int((input_shape[1] - 2) / 2)
 
         inputs = Input(shape=input_shape)
-        lstm_out1 = LSTM(64, dropout=0.4, return_sequences=True)(inputs)
+        lstm_out1 = LSTM(64, dropout=0.2, return_sequences=True)(inputs)
         lstm_out2 = LSTM(32, dropout=0.2)(lstm_out1)
         outputs = Dense(output_shape[1])(lstm_out2)
 
-        # selected_outputs = outputs[:, 2: 2 + cnt]
-        # selected_outputs = Activation('softmax')(selected_outputs)
-        # outputs = tf.concat([outputs[:, :2], selected_outputs, outputs[:, 2 + cnt:]], axis=1)
-        # # outputs = outputs[:, :2] + selected_outputs + outputs[:, 2 + cnt:]
+        selected_outputs = outputs[:, 2: 2 + cnt]
+        selected_outputs = Activation('softmax')(selected_outputs)
+        outputs = tf.concat([outputs[:, :2], selected_outputs, outputs[:, 2 + cnt:]], axis=1)
 
         early_stopping = EarlyStopping(monitor="val_loss", patience=10)
 
