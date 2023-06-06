@@ -71,6 +71,12 @@ def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
                     output.at[i, f"{note_name} vel"] = 0
                     pass
 
+    for i in range(output.shape[0] - 1, 1, -1):
+        curr_time = output.iloc[i, 0]
+        prev_time = output.iloc[i - 1, 0]
+
+        output.at[i, "time"] = curr_time - prev_time
+
     return output
     # output = output.drop_duplicates(subset=['time'])
     # return output
@@ -79,6 +85,12 @@ def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
 def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     end = int((df.shape[1] - 2) / 2 + 2)
+
+    for i in range(1, df.shape[0] - 1):
+        prev_time = df.iloc[i - 1, 0]
+        curr_time = df.iloc[i, 0]
+
+        df.at[i, 'start'] = prev_time + curr_time
 
     for column in df.columns[2:end]:
         pitch = int(column)
