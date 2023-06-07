@@ -27,17 +27,23 @@ class ColumnScaler(MinMaxScaler):
         return super().fit(df, y)
 
     def transform(self, df: pd.DataFrame):
-        to_transform = self._pick_cols(df) if self.cols is not None else df
-        transformed = super().transform(to_transform)
-        df.iloc[:, self.indexes] = transformed
+        if self.cols is not None:
+            to_transform = self._pick_cols(df)
+            transformed = super().transform(to_transform)
+            df.iloc[:, self.indexes] = transformed
+        else:
+            df = super().transform(df)
         return df
 
     def inverse_transform(self, row: np.ndarray):
-        row_to_transform = self._pick_cols(row)
-        row_to_transform = row_to_transform.reshape(1, -1)
-        transformed = super().inverse_transform(row_to_transform)
+        if self.cols is not None:
+            row_to_transform = self._pick_cols(row)
+            row_to_transform = row_to_transform.reshape(1, -1)
+            transformed = super().inverse_transform(row_to_transform)
 
-        row[self.indexes] = transformed
+            row[self.indexes] = transformed
+        else:
+            row = super().inverse_transform(row)
         return row
 
     def _pick_cols(self, data: pd.DataFrame | np.ndarray | None = None):
