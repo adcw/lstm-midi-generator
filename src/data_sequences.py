@@ -4,12 +4,12 @@ from sklearn.preprocessing import MinMaxScaler
 from src.utils import ColumnScaler
 
 
-def window(df: pd.DataFrame, size: int = 10, stride: int = 1) -> np.array:
+def window(df: np.ndarray, size: int = 10, stride: int = 1) -> np.array:
     df_len = df.shape[0]
     result = list()
 
     for i in range(0, df_len - size, stride):
-        result.append(df.iloc[i:i + size])
+        result.append(df[i:i + size])
 
     return np.array(result).astype(np.float)
 
@@ -17,11 +17,11 @@ def window(df: pd.DataFrame, size: int = 10, stride: int = 1) -> np.array:
 def training_sequence(df: pd.DataFrame, input_len: int = 20, output_len: int = 1, window_stride: int = 1,
                       scaler: ColumnScaler | None = None):
     vel_columns_count = int((df.shape[1] - 2) / 2)
-    colnames_to_scale = df.columns[-vel_columns_count:].to_list()
+    # colnames_to_scale = df.columns[-vel_columns_count:].to_list()
 
     if scaler is None:
         scaler = ColumnScaler()
-        scaler.fit(df, cols=colnames_to_scale)
+        scaler.fit(df)
 
     df = scaler.transform(df)
 
