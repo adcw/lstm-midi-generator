@@ -77,6 +77,8 @@ def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
 
         output.at[i, "time"] = curr_time - prev_time
 
+    output.columns = output.columns.astype(str)
+
     return output
     # output = output.drop_duplicates(subset=['time'])
     # return output
