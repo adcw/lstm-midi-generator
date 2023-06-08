@@ -28,7 +28,7 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
         # selected_outputs = Activation('softmax')(selected_outputs)
         # outputs = tf.concat([outputs[:, :2], selected_outputs, outputs[:, 2 + cnt:]], axis=1)
 
-        early_stopping = EarlyStopping(monitor="val_loss", patience=6)
+        early_stopping = EarlyStopping(monitor="val_loss", patience=12)
 
         model = Model(name=model_name, inputs=inputs, outputs=outputs)
         model.compile(optimizer=Adam(learning_rate=0.01), loss="mse")
