@@ -14,6 +14,9 @@ def get_midi_filenames(main_dir: str, subdirs: list[str] | None = None):
 
 
 class ColumnScaler(MinMaxScaler):
+    """
+    A scaler with the option to specify column names to be scaled.
+    """
     def __init__(self):
         super().__init__()
         self.cols: list[str] | None = None
