@@ -32,12 +32,16 @@ def predict_note(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray):
     return pred
 
 
-def generate_notes(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray, n_generate: int = 10):
+def generate_notes(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray, col_indexes: pd.Index,
+                   n_generate: int = 10):
     result = sample_notes.copy()
 
-    for _ in tqdm(range(n_generate)):
+    for _ in tqdm(range(n_generate), desc="Generating notes..."):
         sample = result[-sample_notes.shape[0]:]
         next_note = predict_note(model, scaler, sample)
         result = np.vstack((result, next_note))
 
-    return result[sample_notes.shape[0]:]
+    generated = pd.DataFrame(result[sample_notes.shape[0]:])
+    generated.columns = col_indexes
+
+    return generated
