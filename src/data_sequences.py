@@ -1,6 +1,8 @@
-import pandas as pd
+import pickle
+
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
+
 from src.utils import ColumnScaler
 
 
@@ -15,13 +17,18 @@ def window(df: np.ndarray, size: int = 10, stride: int = 1) -> np.array:
 
 
 def training_sequence(df: pd.DataFrame, input_len: int = 20, output_len: int = 1, window_stride: int = 1,
-                      scaler: ColumnScaler | None = None):
-    vel_columns_count = int((df.shape[1] - 2) / 2)
-    # colnames_to_scale = df.columns[-vel_columns_count:].to_list()
-
-    if scaler is None:
+                      scaler_path: str = "h5_models/scaler.pkl", init_scaler: bool = False):
+    if not init_scaler:
+        # if we provide path to scaler, load this scaler
+        with open(scaler_path, 'rb') as file:
+            scaler = pickle.load(file)
+    else:
+        # init scaler otherwise
         scaler = ColumnScaler()
         scaler.fit(df)
+
+        with open(scaler_path, 'wb+') as file:
+            pickle.dump(scaler, file)
 
     df = scaler.transform(df)
 
