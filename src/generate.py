@@ -38,10 +38,35 @@ def generate_notes(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray,
 
     for _ in tqdm(range(n_generate), desc="Generating notes..."):
         sample = result[-sample_notes.shape[0]:]
-        next_note = predict_note(model, scaler, sample)
-        result = np.vstack((result, next_note))
+        prev_notes = np.reshape(result[-1], (1, -1))
+        next_notes = predict_note(model, scaler, sample)
+
+        next_notes = _fix_notes(prev_notes, next_notes)
+
+        result = np.vstack((result, next_notes))
 
     generated = pd.DataFrame(result[sample_notes.shape[0]:])
     generated.columns = col_indexes
 
     return generated
+
+
+NOTE_DOWN = 2
+NOTE_HOLD = 1
+NOTE_OFF = 0
+
+
+def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray):
+
+    n_pitches = int((curr_notes.shape[1] - 2) / 2)
+
+    fixed_notes = curr_notes.copy()
+
+    for ns_index in range(2, 2 + n_pitches):
+        prev_note_state = prev_notes[0, ns_index]
+        curr_note_state = curr_notes[0, ns_index]
+
+        if prev_note_state == NOTE_OFF and curr_note_state == NOTE_HOLD:
+            fixed_notes[0, ns_index] = NOTE_DOWN
+
+    return fixed_notes
