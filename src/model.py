@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.callbacks import EarlyStopping
-from keras.layers import Input, LSTM, Dense, Activation, Conv1D
+from keras.layers import Input, LSTM, Dense, Activation, Conv1D, Lambda
 from keras.models import Model, load_model
 from keras.optimizers import Adam
 import pickle
@@ -17,16 +17,20 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
         input_shape = xs[0].shape
         output_shape = ys[0].shape
 
-        cnt = int((input_shape[1] - 2) / 2)
-
         inputs = Input(shape=input_shape)
         lstm_out1 = LSTM(64, dropout=0, return_sequences=True)(inputs)
         lstm_out2 = LSTM(64, dropout=0.2)(lstm_out1)
-        outputs = Dense(output_shape[1], activation='sigmoid')(lstm_out2)
 
-        # selected_outputs = outputs[:, 2: 2 + cnt]
-        # selected_outputs = Activation('softmax')(selected_outputs)
-        # outputs = tf.concat([outputs[:, :2], selected_outputs, outputs[:, 2 + cnt:]], axis=1)
+        # # apply softmax to note states
+        cnt = int((input_shape[1] - 2) / 2)  # calculate number of note states
+        selected_outputs = lstm_out2[:, 2: 2 + cnt]  # get only note states
+
+        selected_outputs = Dense(3, activation='softmax')(selected_outputs)
+        argmax_output = Lambda(lambda x: tf.cast(tf.argmax(x, axis=1), tf.float32))(selected_outputs)
+        argmax_output = Lambda(lambda x: tf.expand_dims(x, axis=1))(argmax_output)  # Add one dimension
+        argmax_output = tf.concat([lstm_out2[:, :2], argmax_output, lstm_out2[:, 2 + cnt:]], axis=1)
+
+        outputs = Dense(output_shape[1], activation='sigmoid')(argmax_output)
 
         early_stopping = EarlyStopping(monitor="val_loss", patience=12)
 
