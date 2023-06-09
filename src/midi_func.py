@@ -26,9 +26,9 @@ def midi_to_notes(midi_file: str) -> pd.DataFrame:
 
         notes['pitch'].append(note.pitch)
         notes['start'].append(start)
-        notes['start offset'].append(start % 1)
+        notes['bar start offset'].append(start % 4)
         notes['end'].append(end)
-        notes['end offset'].append(end % 1)
+        notes['bar end offset'].append(end % 4)
         notes['velocity'].append(note.velocity)
 
     df = pd.DataFrame({name: np.array(value) for name, value in notes.items()})

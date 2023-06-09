@@ -1,33 +1,25 @@
 import numpy as np
 import pandas as pd
 from keras.models import Model
-from sklearn.preprocessing import MinMaxScaler
+from tqdm import tqdm
+
+import src.config as config
 from src.utils import ColumnScaler
 
-from src.data_sequences import training_sequence
-from src.dataset import notes_to_dataset
-
-from tqdm import tqdm
+NN_CNT = config.NN_CNT
 
 
 def predict_note(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray):
     xs = sample_notes
     xs_reshaped = np.reshape(xs, (-1, xs.shape[0], xs.shape[1]))
-    n_pitches = int((xs.shape[1] - 2) / 2)
 
     # predict
     pred = model.predict(xs_reshaped, verbose=0)
-    pred = np.insert(pred, 1, 0)
+    pred = np.insert(pred, [1] * (NN_CNT - 1), 0)
     pred = pred.reshape(1, -1)
 
     # rescale prediction
     pred = scaler.inverse_transform(pred)
-
-    # # calculate time offset
-    # pred[0, 1] = (xs[-1, 1] + pred[0, 0]) % 1
-    #
-    # # round note states
-    # pred[0, 2:2 + n_pitches] = np.round(pred[0, 2:2 + n_pitches])
 
     return pred
 
@@ -70,7 +62,7 @@ NOTE_OFF = 0
 
 def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray, time_diffs: np.ndarray | None = None,
                of: int = 0):
-    n_pitches = int((curr_notes.shape[1] - 2) / 2)
+    n_pitches = int((curr_notes.shape[1] - NN_CNT) / NN_CNT)
 
     # fix time diff
     time_diff = curr_notes[0, 0]
@@ -80,11 +72,14 @@ def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray, time_diffs: np.nd
     # calculate beat offset
     curr_notes[0, 1] = (curr_notes[0, 0] + prev_notes[0, 1]) % 1
 
+    # calculate bar offset
+    curr_notes[0, 2] = (curr_notes[0, 0] + prev_notes[0, 2]) % 4
+
     # round note states
-    curr_notes[0, 2:2 + n_pitches] = np.round(curr_notes[0, 2:2 + n_pitches])
+    curr_notes[0, NN_CNT:NN_CNT + n_pitches] = np.round(curr_notes[0, NN_CNT:NN_CNT + n_pitches])
 
     # fix note state
-    for ns_index in range(2, 2 + n_pitches):
+    for ns_index in range(NN_CNT, NN_CNT + n_pitches):
         prev_note_state = prev_notes[0, ns_index]
         curr_note_state = curr_notes[0, ns_index]
 

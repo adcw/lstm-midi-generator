@@ -5,6 +5,10 @@ import pandas as pd
 
 from src.utils import ColumnScaler
 
+import src.config as config
+
+NN_CNT = config.NN_CNT
+
 
 def window(df: np.ndarray, size: int = 10, stride: int = 1) -> np.array:
     df_len = df.shape[0]
@@ -36,8 +40,9 @@ def training_sequence(df: pd.DataFrame, input_len: int = 20, output_len: int = 1
 
     xs = windowed[:, :input_len, :]
     ys = windowed[:, input_len:, :]
-    ys = np.delete(ys, 1, axis=2)
+
+    # cut out periodic attributes from ys
+    ys = np.delete(ys, slice(1, NN_CNT), axis=2)
 
     return xs, ys, scaler
 
-    pass
