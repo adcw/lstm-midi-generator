@@ -20,7 +20,8 @@ if __name__ == '__main__':
     filenames = get_midi_filenames(main_dir='samples', subdirs=['Other'])
 
     all_notes = read_datasets(filepaths=filenames)
-    dataset = notes_to_dataset(all_notes[1])
+    dataset, unique_time_diffs = notes_to_dataset(all_notes[1])
+    print(f"unique diffs: {unique_time_diffs.tolist()}")
     col_indexes = dataset.columns
 
     # notes = dataset_to_notes(dataset)
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     model = get_model(xs=x_train, ys=y_train, validation_data=(x_val, y_val), init=INIT)
 
     gen_dataset = generate_notes(model=model, col_indexes=col_indexes, scaler=scaler, sample_notes=x_test[0],
-                                 n_generate=100)
+                                 n_generate=100, unique_diffs=unique_time_diffs, diff_fix_factor=1)
 
     gen_notes = dataset_to_notes(gen_dataset)
     notes_to_midi(notes=gen_notes, instrument_name="Acoustic Grand Piano", out_file="./output/generated.mid",
