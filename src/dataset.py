@@ -11,7 +11,7 @@ def read_datasets(filepaths: list[str]):
     return [midi_to_notes(f) for f in filepaths]
 
 
-def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
+def notes_to_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray]:
     cols = ['time', 'offset']
     pitches = df['pitch'].unique()
     veloc_names = [f"{p} vel" for p in pitches]
@@ -76,8 +76,11 @@ def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
     # pierwszy wyjdzie NaN z powodu powyżej wymienimy go
     output['time'].fillna(0, inplace=True)
     output.columns = output.columns.astype(str)
+    output.rename(columns={'time': 'time diff'})
 
-    return output
+    unique_time_diffs = np.unique(output['time'])
+
+    return output, unique_time_diffs
     # output = output.drop_duplicates(subset=['time'])
     # return output
 
@@ -85,7 +88,8 @@ def notes_to_dataset(df: pd.DataFrame) -> pd.DataFrame:
 def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     end = int((df.shape[1] - 2) / 2 + 2)
-    df['time'] = df['time'].cumsum()
+    df['time diff'] = df['time diff'].cumsum()
+    df.rename(columns={"time diff": "time"})
 
     for column in df.columns[2:end]:
         pitch = int(column)
