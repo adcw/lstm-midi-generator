@@ -25,7 +25,7 @@ def predict_note(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray):
 
 
 def generate_notes(model: Model, scaler: ColumnScaler, sample_notes: np.ndarray, col_indexes: pd.Index,
-                   n_generate: int = 10, unique_diffs: np.ndarray | None = None, diff_fix_factor: int = 0):
+                   n_generate: int = 10, unique_diffs: np.ndarray | None = None, diff_fix_factor: float = 0):
     """
     Generate notes
     :param diff_fix_factor: How much to fix time offset of notes. 1 - the strongest fix, 0 - original NN output
@@ -61,8 +61,8 @@ NOTE_OFF = 0
 
 
 def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray, time_diffs: np.ndarray | None = None,
-               of: int = 0):
-    n_pitches = int((curr_notes.shape[1] - NN_CNT) / NN_CNT)
+               of: float = 0):
+    n_pitches = int((curr_notes.shape[1] - NN_CNT) / 2)
 
     # fix time diff
     time_diff = curr_notes[0, 0]
@@ -85,6 +85,10 @@ def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray, time_diffs: np.nd
 
         if prev_note_state == NOTE_OFF and curr_note_state == NOTE_HOLD:
             curr_notes[0, ns_index] = NOTE_DOWN
+
+        # fix velocities
+        if curr_note_state == NOTE_OFF:
+            curr_notes[0, ns_index + n_pitches] = 0
 
     return curr_notes
 

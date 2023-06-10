@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.callbacks import EarlyStopping
-from keras.layers import Input, LSTM, Dense, Activation, Conv1D, Lambda
+from keras.layers import Input, LSTM, Dense, Activation, Conv1D, Lambda, Concatenate, Add, SpatialDropout1D
 from keras.models import Model, load_model
 from keras.optimizers import Adam
 import pickle
@@ -18,24 +18,22 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
         output_shape = ys[0].shape
 
         inputs = Input(shape=input_shape)
+
+        conv = Conv1D(filters=64, kernel_size=9)(inputs)
+        conv_lstm = LSTM(64, dropout=0.1)(conv)
+
         lstm_out1 = LSTM(64, dropout=0, return_sequences=True)(inputs)
         lstm_out2 = LSTM(64, dropout=0.2)(lstm_out1)
 
-        # # apply softmax to note states
-        # cnt = int((input_shape[1] - 2) / 2)  # calculate number of note states
-        # selected_outputs = lstm_out2[:, 2: 2 + cnt]  # get only note states
-        #
-        # selected_outputs = Dense(3, activation='softmax')(selected_outputs)
-        # argmax_output = Lambda(lambda x: tf.cast(tf.argmax(x, axis=1), tf.float32))(selected_outputs)
-        # argmax_output = Lambda(lambda x: tf.expand_dims(x, axis=1))(argmax_output)  # Add one dimension
-        # argmax_output = tf.concat([lstm_out2[:, :2], argmax_output, lstm_out2[:, 2 + cnt:]], axis=1)
+        concat = Concatenate()([lstm_out2, conv_lstm])
+        dense = Dense(64)(concat)
 
-        outputs = Dense(output_shape[1], activation='sigmoid')(lstm_out2)
+        outputs = Dense(output_shape[1], activation='sigmoid')(dense)
 
-        early_stopping = EarlyStopping(monitor="val_loss", patience=12)
+        early_stopping = EarlyStopping(monitor="val_loss", patience=30)
 
         model = Model(name=model_name, inputs=inputs, outputs=outputs)
-        model.compile(optimizer=Adam(learning_rate=0.01), loss="mse")
+        model.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
         model.summary()
 
         history = model.fit(x=xs, y=ys, epochs=500, callbacks=[early_stopping], validation_data=validation_data,
