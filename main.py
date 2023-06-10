@@ -14,7 +14,7 @@ TEMPO = 172
 
 # When set to false, load scaler and model from files, otherwise fit everything again
 # Make sure to set it to True if you have changed the training data.
-INIT = False
+INIT = True
 
 if __name__ == '__main__':
     filenames = get_midi_filenames(main_dir='samples', subdirs=['Other'])
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
     #               out_file="./output/test.mid")
 
-    input_len = 12
+    input_len = 25
 
     xs, ys, scaler = training_sequence(dataset, input_len=input_len, output_len=1, init_scaler=INIT)
 
@@ -40,8 +40,8 @@ if __name__ == '__main__':
 
     model = get_model(xs=x_train, ys=y_train, validation_data=(x_val, y_val), init=INIT)
 
-    gen_dataset = generate_notes(model=model, col_indexes=col_indexes, scaler=scaler, sample_notes=x_test[0],
-                                 n_generate=100, unique_diffs=unique_time_diffs, diff_fix_factor=0)
+    gen_dataset = generate_notes(model=model, col_indexes=col_indexes, scaler=scaler, sample_notes=x_test[2],
+                                 n_generate=300, unique_diffs=unique_time_diffs, diff_fix_factor=1)
 
     gen_notes = dataset_to_notes(gen_dataset)
     notes_to_midi(notes=gen_notes, instrument_name="Acoustic Grand Piano", out_file="./output/generated.mid",

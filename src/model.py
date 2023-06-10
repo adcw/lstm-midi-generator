@@ -6,6 +6,7 @@ from keras.models import Model, load_model
 from keras.optimizers import Adam
 import pickle
 import tensorflow as tf
+from src.layers import DeepLSTM
 
 
 def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray, np.ndarray] | None = None, init=True,
@@ -19,18 +20,11 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
 
         inputs = Input(shape=input_shape)
 
-        conv = Conv1D(filters=64, kernel_size=9)(inputs)
-        conv_lstm = LSTM(64, dropout=0.1)(conv)
+        deep_lstm = DeepLSTM(kernels=[13, 17, 19], filters=[64, 64, 256])(inputs)
 
-        lstm_out1 = LSTM(64, dropout=0, return_sequences=True)(inputs)
-        lstm_out2 = LSTM(64, dropout=0.2)(lstm_out1)
+        outputs = Dense(output_shape[1], activation='sigmoid')(deep_lstm)
 
-        concat = Concatenate()([lstm_out2, conv_lstm])
-        dense = Dense(64)(concat)
-
-        outputs = Dense(output_shape[1], activation='sigmoid')(dense)
-
-        early_stopping = EarlyStopping(monitor="val_loss", patience=30)
+        early_stopping = EarlyStopping(monitor="val_loss", patience=7)
 
         model = Model(name=model_name, inputs=inputs, outputs=outputs)
         model.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
