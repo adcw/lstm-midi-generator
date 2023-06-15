@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.callbacks import EarlyStopping
-from keras.layers import Input, LSTM, Dense, Activation, Conv1D, Lambda, Concatenate, Add, SpatialDropout1D
+from keras.layers import Input, Dense
 from keras.models import Model, load_model
 from keras.optimizers import Adam
-import pickle
-import tensorflow as tf
 from keras.utils import custom_object_scope
 
 from src.layers import DeepLSTM
@@ -23,14 +21,15 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
 
             inputs = Input(shape=input_shape)
 
-            deep_lstm = DeepLSTM(kernels=[13, 17, 19], filters=[64, 64, 256])(inputs)
+            deep_lstm = DeepLSTM(kernels=[9, 11,  17, 23], filters=[128, 128, 128, 128])(inputs)
 
             outputs = Dense(output_shape[1], activation='sigmoid')(deep_lstm)
 
             early_stopping = EarlyStopping(monitor="val_loss", patience=7)
 
             model = Model(name=model_name, inputs=inputs, outputs=outputs)
-            model.compile(optimizer=Adam(learning_rate=0.001), loss="mse")
+            model.compile(optimizer=Adam(learning_rate=0.001), loss="mse",
+                          loss_weights=[2] + (output_shape[1] - 1) * [1])
             model.summary()
 
             history = model.fit(x=xs, y=ys, epochs=500, callbacks=[early_stopping], validation_data=validation_data,

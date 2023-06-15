@@ -29,11 +29,15 @@ class ColumnScaler(MinMaxScaler):
         df = self._pick_cols(df) if cols is not None else df
         return super().fit(df, y)
 
-    def transform(self, df: pd.DataFrame):
+    def transform(self, df: pd.DataFrame | np.ndarray):
         if self.cols is not None:
             to_transform = self._pick_cols(df)
             transformed = super().transform(to_transform)
-            df.iloc[:, self.indexes] = transformed
+
+            if isinstance(df, pd.DataFrame):
+                df.iloc[:, self.indexes] = transformed
+            if isinstance(df, np.ndarray):
+                df = np.insert(df, self.indexes, transformed)
         else:
             df = super().transform(df)
         return df

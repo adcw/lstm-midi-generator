@@ -15,7 +15,7 @@ def read_datasets(filepaths: list[str]):
     return [midi_to_notes(f) for f in filepaths]
 
 
-def notes_to_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray]:
+def notes_to_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     pitches = df['pitch'].unique()
     veloc_names = [f"{p} vel" for p in pitches]
 
@@ -31,8 +31,6 @@ def notes_to_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray]:
     output = output.sort_values(by=['time'])
     output = output.drop_duplicates(subset=['time'])
     output = output.reset_index(drop=True)
-
-    # output.iloc[NA_CNT:] = output.iloc[NA_CNT:].astype(object)
 
     for i, row in df.iterrows():
         pitch = int(row['pitch'])
@@ -84,9 +82,15 @@ def notes_to_dataset(df: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray]:
     output.columns = output.columns.astype(str)
     output = output.rename(columns={'time': 'time diff'})
 
-    unique_time_diffs = np.unique(output['time diff'])
+    unique_vals = dict()
 
-    return output, unique_time_diffs
+    unique_time_diffs = np.unique(output['time diff'])
+    unique_vals['time diff'] = unique_time_diffs
+
+    unique_velocities = np.unique(output.iloc[:, NN_CNT + len(pitches):])
+    unique_vals['vel'] = unique_velocities
+
+    return output, unique_vals
 
 
 def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:

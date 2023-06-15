@@ -1,4 +1,4 @@
-from keras.layers import Layer, Conv1D, LSTM, Concatenate, Dense
+from keras.layers import Layer, Conv1D, LSTM, Concatenate, Dense, Average, Dropout
 
 
 class DeepLSTM(Layer):
@@ -34,16 +34,17 @@ class DeepLSTM(Layer):
 
         for i in range(len(filters)):
             self.conv_layers.append(Conv1D(filters=filters[i], kernel_size=kernels[i]))
-            self.lstm_layers.append(LSTM(128, dropout=0.2, return_sequences=True))
+            self.lstm_layers.append(LSTM(128, return_sequences=True))
             self.lstm_layers.append(LSTM(64, dropout=0.2))
 
-        self.lstm_out1 = LSTM(256, dropout=0.2, return_sequences=True)
-        self.lstm_out2 = LSTM(256, dropout=0.2, return_sequences=True)
-        self.lstm_out3 = LSTM(128, dropout=0.2)
+        self.lstm_out1 = LSTM(128, return_sequences=True)
+        self.lstm_out2 = LSTM(128, return_sequences=True)
+        self.lstm_out3 = LSTM(64, dropout=0.2)
 
         self.concat = Concatenate()
-        self.dense = Dense(128)
-        self.dense2 = Dense(64)
+        self.dropout = Dropout(rate=0.2)
+        self.dense = Dense(128, activation='selu')
+        self.dense2 = Dense(64, activation='linear')
 
     def call(self, inputs, *args, **kwargs):
         conv_outputs = []
@@ -58,8 +59,9 @@ class DeepLSTM(Layer):
         lstm_out3_output = self.lstm_out3(lstm_out2_output)
 
         concat_output = self.concat([lstm_out3_output] + conv_outputs)
+        dropout_output = self.dropout(concat_output)
 
-        dense_output = self.dense(concat_output)
+        dense_output = self.dense(dropout_output)
         dense2_output = self.dense2(dense_output)
 
         return dense2_output

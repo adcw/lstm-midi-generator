@@ -13,6 +13,9 @@ def midi_to_notes(midi_file: str) -> pd.DataFrame:
 
     # Sort the notes by start time
     sorted_notes = sorted(instrument.notes, key=lambda note: note.start)
+    for i in pm.instruments:
+        sorted_notes.extend(i.notes)
+    sorted_notes = sorted(sorted_notes, key=lambda note: note.start)
 
     # Get resolution of MIDI file
     resolution = pm.resolution

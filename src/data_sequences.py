@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 
-from src.utils import ColumnScaler
+from sklearn.preprocessing import MinMaxScaler
 
 import src.config as config
 
@@ -28,13 +28,13 @@ def training_sequence(df: pd.DataFrame, input_len: int = 20, output_len: int = 1
             scaler = pickle.load(file)
     else:
         # init scaler otherwise
-        scaler = ColumnScaler()
-        scaler.fit(df)
+        scaler = MinMaxScaler()
+        scaler.fit(df.values)
 
         with open(scaler_path, 'wb+') as file:
             pickle.dump(scaler, file)
 
-    df = scaler.transform(df)
+    df = scaler.transform(df.values)
 
     windowed = window(df, size=input_len + output_len, stride=window_stride)
 
