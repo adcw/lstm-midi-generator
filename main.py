@@ -15,6 +15,7 @@ TEMPO = 172
 # When set to false, load scaler and model from files, otherwise fit everything again
 # Make sure to set it to True if you have changed the training data.
 INIT = False
+MODEL_NAME = "h5_models/mozart_2.h5"
 
 if __name__ == '__main__':
     filenames = get_midi_filenames(main_dir='samples', subdirs=['Piano'])
@@ -28,19 +29,20 @@ if __name__ == '__main__':
     # notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
     #               out_file="./output/export test.mid")
 
-    input_len = 25
+    input_len = 20
 
-    xs, ys, scaler = training_sequence(dataset, input_len=input_len, output_len=1, init_scaler=INIT)
+    xs, ys, scaler = training_sequence(dataset, input_len=input_len, output_len=1, init_scaler=INIT,
+                                       scaler_path=f"{MODEL_NAME}_scaler.pkl")
 
     [n_rows_input, n_cols_input] = xs[0].shape
     [n_rows_output, n_cols_output] = ys[0].shape
 
     x_train, x_val, y_train, y_val = train_test_split(xs, ys, test_size=0.3)
 
-    model = get_model(xs=x_train, ys=y_train, validation_data=(x_val, y_val), init=INIT)
+    model = get_model(xs=x_train, ys=y_train, validation_data=(x_val, y_val), init=INIT, model_name=MODEL_NAME)
 
-    gen_dataset = generate_notes(model=model, col_indexes=col_indexes, scaler=scaler, sample_notes=x_val[13],
-                                 n_generate=400, unique_vals=unique_vals, diff_fix_factor=0.9, vel_fix_factor=0.7,
+    gen_dataset = generate_notes(model=model, col_indexes=col_indexes, scaler=scaler, sample_notes=x_val[0],
+                                 n_generate=400, unique_vals=unique_vals, diff_fix_factor=0.8, vel_fix_factor=0.8,
                                  crop_training=True)
 
     gen_notes = dataset_to_notes(gen_dataset)

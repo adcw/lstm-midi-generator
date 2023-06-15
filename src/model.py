@@ -21,7 +21,7 @@ def get_model(xs: np.ndarray, ys: np.ndarray, validation_data: tuple[np.ndarray,
 
             inputs = Input(shape=input_shape)
 
-            deep_lstm = DeepLSTM(kernels=[9, 11,  17, 23], filters=[128, 128, 128, 128])(inputs)
+            deep_lstm = DeepLSTM(kernels=[9, 11,  17], filters=[64, 64, 64])(inputs)
 
             outputs = Dense(output_shape[1], activation='sigmoid')(deep_lstm)
 
