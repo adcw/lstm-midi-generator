@@ -39,17 +39,16 @@ class DeepLSTM(Layer):
         for i in range(len(filters)):
             self.conv_layers.append(Conv1D(filters=filters[i], kernel_size=kernels[i]))
             self.lstm_layers.append(LSTM(128, dropout=0.05, return_sequences=True))
-            self.lstm_layers.append(LSTM(64, dropout=0.2, return_sequences=True))
-            self.pooling_layers.append(AveragePooling1D(pool_size=2))
-            # self.dense_layers.append(Dense(64, activation='elu'))
+            self.lstm_layers.append(LSTM(64, dropout=0.05, return_sequences=True))
+            self.pooling_layers.append(AveragePooling1D(pool_size=5))
             self.global_avg.append(GlobalAveragePooling1D())
 
         self.lstm_out1 = LSTM(128, dropout=0.05, return_sequences=True)
-        self.lstm_out2 = LSTM(128, dropout=0.05, return_sequences=True)
-        self.lstm_out3 = LSTM(64, dropout=0.2)
+        self.lstm_out2 = LSTM(256, dropout=0.1, return_sequences=True)
+        self.lstm_out3 = LSTM(64, dropout=0.1)
 
         self.concat = Concatenate()
-        self.dropout = Dropout(rate=0.2)
+        self.dropout = Dropout(rate=0.1)
         self.dense = Dense(128, activation='elu')
         self.dense2 = Dense(64, activation='elu')
 
