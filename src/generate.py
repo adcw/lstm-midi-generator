@@ -24,9 +24,11 @@ def predict_note(model: Model, sample_notes: np.ndarray):
 def generate_notes(model: Model, scaler: MinMaxScaler, sample_notes: np.ndarray, col_indexes: pd.Index,
                    n_generate: int = 10, unique_vals: dict | None = None, diff_fix_factor: float = 1,
                    vel_fix_factor: float = 0,
-                   crop_training: bool = True):
+                   crop_training: bool = True, staccato_factor: float = 1):
     """
     Generate notes
+    :param staccato_factor: value between 0 excluded and 2 included. values below 1 results in staccato reduction,
+            higher values brings in more snappy articulations. 1 is no effect.
     :param vel_fix_factor: How much to fix velocities?
     :param crop_training:
     :param diff_fix_factor: How much to fix time offset of notes. 1 - the strongest fix, 0 - original NN output
@@ -46,7 +48,7 @@ def generate_notes(model: Model, scaler: MinMaxScaler, sample_notes: np.ndarray,
         curr_notes = predict_note(model, sample)
 
         curr_notes = _fix_notes(prev_notes=prev_notes, curr_notes=curr_notes, scaler=scaler, unique_vals=unique_vals,
-                                of=diff_fix_factor, vf=vel_fix_factor)
+                                of=diff_fix_factor, vf=vel_fix_factor, staccato_factor=staccato_factor)
 
         result = np.vstack((result, curr_notes))
 
@@ -65,8 +67,7 @@ NOTE_OFF = 0
 
 def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray, scaler: MinMaxScaler,
                unique_vals: np.ndarray | None = None,
-               of: float = 1, vf: float = 0):
-
+               of: float = 1, vf: float = 0, staccato_factor: float = 1):
     # retrieve original data
     curr_notes = scaler.inverse_transform(curr_notes)
 
@@ -91,7 +92,8 @@ def _fix_notes(prev_notes: np.ndarray, curr_notes: np.ndarray, scaler: MinMaxSca
     curr_notes[0, 2] = (curr_notes[0, 0] + prev_notes[0, 2]) % 4
 
     # round note states
-    curr_notes[0, NN_CNT:NN_CNT + n_pitches] = np.round(curr_notes[0, NN_CNT:NN_CNT + n_pitches])
+    curr_notes[0, NN_CNT:NN_CNT + n_pitches] = np.round(
+        np.power(curr_notes[0, NN_CNT:NN_CNT + n_pitches], staccato_factor))
 
     # fix note state
     for ns_index in range(NN_CNT, NN_CNT + n_pitches):
