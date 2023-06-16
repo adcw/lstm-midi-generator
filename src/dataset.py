@@ -143,3 +143,12 @@ def dataset_to_notes(df: pd.DataFrame) -> pd.DataFrame:
     output = output.sort_values(by=['start'])
     output = output.reset_index(drop=True)
     return output
+
+def combine_datasets(inputs: list[pd.DataFrame]) -> pd.DataFrame:
+    combined_data = pd.concat(inputs)
+    combined_data['time diff'] = combined_data['time diff'].cumsum()
+    combined_data['time diff'] = combined_data['time diff'].fillna(0)
+
+    combined_data['time diff'] += combined_data.groupby((combined_data['time diff'] == 0).cumsum()).cumcount()
+    combined_data = combined_data.reset_index(drop=True)
+    return combined_data

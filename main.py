@@ -1,7 +1,7 @@
 from sklearn.model_selection import train_test_split
 
 from src.data_sequences import training_sequence
-from src.dataset import read_datasets, notes_to_dataset, dataset_to_notes
+from src.dataset import read_datasets, notes_to_dataset, dataset_to_notes, combine_datasets
 from src.generate import generate_notes
 from src.midi_func import notes_to_midi
 from src.model import get_model
@@ -19,10 +19,12 @@ MODEL_NAME = "h5_models/mozart_4.h5"
 OUTPUT_FILE_NAME = "./output/mozart_4.mid"
 
 if __name__ == '__main__':
-    filenames = get_midi_filenames(main_dir='samples', subdirs=['Piano'])
+    filenames = get_midi_filenames(main_dir='samples', subdirs=['Fills'])
 
     all_notes = read_datasets(filepaths=filenames)
     dataset, unique_vals = notes_to_dataset(all_notes[0])
+    dataset1, _ = notes_to_dataset(all_notes[1])
+    combo = combine_datasets([dataset,dataset1])
     print(f"unique vals: {unique_vals.__repr__()}")
     col_indexes = dataset.columns
 
