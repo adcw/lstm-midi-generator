@@ -150,5 +150,10 @@ def combine_datasets(inputs: list[pd.DataFrame]) -> pd.DataFrame:
     combined_data['time diff'] = combined_data['time diff'].fillna(0)
 
     combined_data['time diff'] += combined_data.groupby((combined_data['time diff'] == 0).cumsum()).cumcount()
+
+
+    combined_data['time diff'] = combined_data['time diff'].diff()
+    # pierwszy wyjdzie NaN z powodu powyżej wymienimy go
+    combined_data['time diff'].fillna(0, inplace=True)
     combined_data = combined_data.reset_index(drop=True)
     return combined_data
