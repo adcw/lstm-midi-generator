@@ -19,7 +19,7 @@ MODEL_NAME = "h5_models/mozart_4.h5"
 OUTPUT_FILE_NAME = "./output/mozart_4.mid"
 
 if __name__ == '__main__':
-    filenames = get_midi_filenames(main_dir='samples', subdirs=['Fills'])
+    filenames = get_midi_filenames(main_dir='samples', subdirs=['Swing Beats'])
 
     all_notes = read_datasets(filepaths=filenames)
     dataset, unique_vals = notes_to_dataset(all_notes)

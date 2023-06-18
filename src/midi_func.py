@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 # Extracting the notes from the sample MIDI file
-def midi_to_notes(midi_file: str) -> pd.DataFrame:
+def midi_to_notes(midi_file: str, round_resolution: int = 64) -> pd.DataFrame:
     pm = pretty_midi.PrettyMIDI(midi_file)
     instrument = pm.instruments[0]
     notes = collections.defaultdict(list)
@@ -24,6 +24,12 @@ def midi_to_notes(midi_file: str) -> pd.DataFrame:
         # convert start and end time from seconds to beats.
         start = pm.time_to_tick(note.start) / resolution
         end = pm.time_to_tick(note.end) / resolution
+
+        # quantize notes' start time
+        start = round(start * round_resolution) / round_resolution
+
+        # quantize notes' end time
+        end = round(end * round_resolution) / round_resolution
 
         note: pretty_midi.Note = note
 

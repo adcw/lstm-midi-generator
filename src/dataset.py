@@ -27,6 +27,7 @@ def _single_n2d(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     output = pd.DataFrame(columns=cols)
     output['time'] = pd.concat([df['start'], df['end']], axis=0)
+
     output['bar offset'] = pd.concat([df['bar start offset'], df['bar end offset']], axis=0)
     output['beat offset'] = output['bar offset'] % 1
 
@@ -226,7 +227,7 @@ def combine_datasets(inputs: list[pd.DataFrame]) -> pd.DataFrame:
     combined_data = pd.concat(inputs)
     combined_data.fillna(value=0, inplace=True)
 
-    combined_data.sort_index(axis=1, key=partial(_assign_indexes, index_value=combined_data.columns), inplace=True,
+    combined_data.sort_index(axis=1, key=partial(_assign_indexes, index=combined_data.columns), inplace=True,
                              ascending=True)
 
     return combined_data
