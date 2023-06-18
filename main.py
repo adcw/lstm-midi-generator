@@ -14,7 +14,7 @@ TEMPO = 172
 
 # When set to false, load scaler and model from files, otherwise fit everything again
 # Make sure to set it to True if you have changed the training data.
-INIT = False
+INIT = True
 MODEL_NAME = "h5_models/mozart_4.h5"
 OUTPUT_FILE_NAME = "./output/mozart_4.mid"
 
@@ -22,15 +22,14 @@ if __name__ == '__main__':
     filenames = get_midi_filenames(main_dir='samples', subdirs=['Fills'])
 
     all_notes = read_datasets(filepaths=filenames)
-    dataset, unique_vals = notes_to_dataset(all_notes[0])
-    dataset1, _ = notes_to_dataset(all_notes[1])
-    combo = combine_datasets([dataset,dataset1])
-    print(f"unique vals: {unique_vals.__repr__()}")
+    dataset, unique_vals = notes_to_dataset(all_notes)
     col_indexes = dataset.columns
 
-    # notes = dataset_to_notes(dataset)
-    # notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
-    #               out_file="./output/export test.mid")
+    print(f"unique vals: {unique_vals.__repr__()}")
+
+    notes = dataset_to_notes(dataset)
+    notes_to_midi(notes, instrument_name="Acoustic Grand Piano", resolution=RESOLUTION, tempo=TEMPO,
+                  out_file="./output/export test.mid")
 
     input_len = 25
 
